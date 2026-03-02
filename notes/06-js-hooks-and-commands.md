@@ -6,6 +6,11 @@ LiveView minimizes JavaScript, but some things require client-side code: clipboa
 access, canvas drawing, third-party JS libraries, browser APIs. JS Hooks and JS
 Commands bridge this gap.
 
+LiveView's server-rendered approach means the server controls the DOM. But some
+browser APIs (clipboard, canvas, geolocation, Web Audio, etc.) require imperative
+JavaScript that cannot be expressed as declarative HTML attributes. Hooks provide
+that escape hatch.
+
 **Source files:**
 - `lib/liveview_lab_web/live/lesson6_js_hooks_live.ex`
 - `assets/js/app.js` (hooks section)
@@ -17,32 +22,56 @@ Commands bridge this gap.
 JS Commands run **client-side** — no WebSocket roundtrip. They manipulate the DOM
 directly.
 
+**Important:** Some JS commands are purely client-side (toggle, show, hide,
+add_class, etc.), while `JS.push` explicitly triggers a server roundtrip. The
+power is in chaining both types together — instant visual feedback plus server
+processing.
+
 ### Available Commands
 
 ```elixir
 alias Phoenix.LiveView.JS
 
+# Visibility
 JS.toggle(to: "#element")              # Show/hide
 JS.show(to: "#element")                # Show
 JS.hide(to: "#element")                # Hide
+
+# CSS Classes
 JS.add_class("active", to: "#el")      # Add CSS class
 JS.remove_class("active", to: "#el")   # Remove CSS class
 JS.toggle_class("active", to: "#el")   # Toggle CSS class
+
+# Attributes
 JS.set_attribute({"disabled", ""}, to: "#el")
 JS.remove_attribute("disabled", to: "#el")
+
+# Transitions
 JS.transition("fade-in", to: "#el")    # Run CSS transition
+
+# Events & Navigation
 JS.dispatch("my-event", to: "#el")     # Dispatch DOM event
-JS.push("server-event")                # Push event to server
-JS.navigate("/path")                   # Navigate (live)
-JS.patch("/path")                      # Patch current LV
+JS.push("server-event")                # Push event to server (triggers roundtrip!)
+JS.navigate("/path")                   # Navigate to a different LiveView (full mount)
+JS.patch("/path")                      # Patch current LiveView (triggers handle_params)
+
+# Focus
 JS.focus(to: "#input")                 # Focus element
-JS.focus_first(to: "#container")       # Focus first focusable
-JS.exec("phx-click", to: "#other")     # Execute another binding
+JS.focus_first(to: "#container")       # Focus first focusable child
+
+# Execute another element's binding
+JS.exec("phx-click", to: "#other")     # Triggers the JS command chain bound to
+                                        # the phx-click attribute on #other
 ```
+
+> **`JS.patch` vs `JS.navigate`:** `patch` stays within the current LiveView
+> process and triggers `handle_params/3` — use it for filtering, sorting, or
+> tab switching within the same view. `navigate` performs a live navigation to a
+> (potentially different) LiveView, triggering a full mount cycle.
 
 ### Chaining Commands
 
-Commands are chainable — they execute sequentially on the client:
+Commands are chainable — they are dispatched sequentially on the client:
 
 ```elixir
 JS.push("submit")
@@ -50,6 +79,11 @@ JS.push("submit")
 |> JS.show(to: "#loading")
 |> JS.transition("fade-in", to: "#loading")
 ```
+
+> **Note on transitions:** `JS.transition` starts a CSS transition but does NOT
+> block until it completes. The next command in the chain runs immediately. CSS
+> transitions run asynchronously in the browser. Also, a subsequent server
+> re-render may override DOM changes made by JS commands.
 
 ### Using in Templates
 
@@ -78,6 +112,7 @@ A common pattern: optimistic UI with JS Commands + server confirmation.
 ```
 
 The heart immediately turns red (client-side), while the server processes the "like".
+If the server action fails, the next re-render will reset the DOM to the correct state.
 
 ---
 
@@ -93,12 +128,15 @@ They provide lifecycle callbacks and bidirectional communication.
 const Hooks = {}
 
 Hooks.MyHook = {
-  // Called when the element is added to the DOM
+  // Called when the element is first added to the DOM
   mounted() {
     console.log("Element mounted:", this.el)
   },
 
-  // Called when the element's server-side assigns change
+  // Called when the element is updated by LiveView's DOM patching.
+  // More precisely: fires when the element is patched, which can happen
+  // even if this element's own attributes didn't change (e.g., surrounding
+  // DOM changed and LiveView re-patched the parent).
   updated() {
     console.log("Element updated")
   },
@@ -108,12 +146,12 @@ Hooks.MyHook = {
     console.log("Element destroyed")
   },
 
-  // Called when the element is disconnected from the server
+  // Called when the WebSocket disconnects
   disconnected() {
     console.log("Server disconnected")
   },
 
-  // Called when the element reconnects to the server
+  // Called when the WebSocket reconnects
   reconnected() {
     console.log("Server reconnected")
   }
@@ -134,9 +172,16 @@ const liveSocket = new LiveSocket("/live", Socket, {
 </div>
 ```
 
+`Jason.encode!/1` converts the Elixir map to a JSON string so it can be stored
+in an HTML data attribute. The hook reads it via `this.el.dataset.config`.
+
 **Rules:**
-- Element MUST have a unique `id`
-- Only one hook per element
+- Element **MUST** have a unique `id` — LiveView's DOM patching uses `id` to track
+  elements. Without a stable `id`, LiveView can't tell if a hooked element was
+  updated vs. replaced, causing `destroyed()` + `mounted()` instead of `updated()`.
+- Only one hook per element (the `phx-hook` attribute accepts a single string).
+  To compose multiple behaviors, combine them in one hook or use JS commands for
+  the simpler ones.
 - Access data attributes via `this.el.dataset`
 
 ### Hook API: `this`
@@ -147,7 +192,10 @@ Inside hook callbacks, `this` provides:
 this.el          // The DOM element
 this.viewName    // The LiveView module name
 this.pushEvent(event, payload, callback)  // Client → Server
-this.pushEventTo(selector, event, payload, callback)  // To specific LV/component
+this.pushEventTo(selector, event, payload, callback)
+  // Targets a specific LiveView or LiveComponent. `selector` is a CSS
+  // selector that matches an element with a `phx-target` attribute, or
+  // the root element of a LiveView/LiveComponent.
 this.handleEvent(event, callback)         // Listen for server → client
 this.upload(name, files)                  // Trigger file upload
 this.liveSocket                          // The LiveSocket instance
@@ -183,14 +231,15 @@ end
 
 ```javascript
 this.pushEvent("validate", { data: value }, (reply, ref) => {
-  // reply = the server's response
+  // reply = the map returned by the server's {:reply, map, socket}
+  // ref = a unique reference for this event
   console.log("Server replied:", reply)
 })
 ```
 
 ```elixir
+# Server — note {:reply, ...} instead of the usual {:noreply, ...}
 def handle_event("validate", params, socket) do
-  # Return a reply
   {:reply, %{valid: true, errors: []}, socket}
 end
 ```
@@ -254,6 +303,11 @@ Hooks.AutoResize = {
 
 ### Chart.js Integration
 
+```heex
+<%!-- Server-side template --%>
+<canvas id="my-chart" phx-hook="Chart" data-config={Jason.encode!(@chart_config)} />
+```
+
 ```javascript
 Hooks.Chart = {
   mounted() {
@@ -287,6 +341,9 @@ Hooks.ScrollBottom = {
 ```javascript
 Hooks.KeyHandler = {
   mounted() {
+    // Note: attaching to `document` creates a global listener.
+    // For simpler cases, consider LiveView's built-in `phx-window-keydown`
+    // binding instead of a hook.
     this.handler = (e) => {
       if (e.ctrlKey && e.key === "Enter") {
         this.pushEvent("submit", {})
@@ -303,6 +360,89 @@ Hooks.KeyHandler = {
 }
 ```
 
+> **Built-in alternative:** For many keyboard shortcut cases, you can use
+> `phx-window-keydown` and `phx-window-keyup` bindings directly in your template
+> without needing a hook at all:
+> ```heex
+> <div phx-window-keydown="keypress" phx-key="Escape">...</div>
+> ```
+
+---
+
+## LiveView 1.1: Colocated Hooks
+
+LiveView 1.1 introduced **colocated hooks**, which let you define JavaScript hook
+code directly within your component files. This keeps the hook next to the component
+that uses it, improving maintainability.
+
+### Syntax
+
+```elixir
+defmodule MyAppWeb.Components.Sortable do
+  use Phoenix.LiveComponent
+
+  def render(assigns) do
+    ~H"""
+    <ul id="sortable-list" phx-hook=".Sortable">
+      <li :for={item <- @items}>{item.name}</li>
+    </ul>
+
+    <script :type={Phoenix.LiveView.ColocatedHook} name=".Sortable">
+      export default {
+        mounted() {
+          // Initialize sortable behavior
+          this.el.addEventListener("dragend", (e) => {
+            this.pushEvent("reorder", { order: this.getOrder() })
+          })
+        },
+        getOrder() {
+          return [...this.el.children].map(li => li.dataset.id)
+        }
+      }
+    </script>
+    """
+  end
+end
+```
+
+### Key points:
+- The hook name is **dot-prefixed** (e.g., `.Sortable`) — this auto-namespaces
+  it to the component module, avoiding name collisions
+- The `<script>` tag uses `:type={Phoenix.LiveView.ColocatedHook}` and `name=".HookName"`
+- The script must `export default` the hook object
+- Colocated hooks are automatically collected and registered — no need to manually
+  add them to `app.js`
+- In `app.js`, colocated hooks are merged via `import { colocatedHooks } from "phoenix_live_view"`
+
+---
+
+## LiveView 1.1: phx-mounted & JS.ignore_attributes
+
+### phx-mounted
+
+Fires JS commands when an element is first mounted in the DOM:
+
+```heex
+<dialog id="my-dialog" phx-mounted={JS.exec("phx-click", to: "#open-btn")}>
+  Dialog content
+</dialog>
+```
+
+### JS.ignore_attributes
+
+Prevents LiveView from patching specific attributes, useful for native HTML
+elements where the browser controls an attribute:
+
+```heex
+<details phx-mounted={JS.ignore_attributes(["open"])}>
+  <summary>Click to expand</summary>
+  <p>Content that the browser shows/hides via the `open` attribute.</p>
+</details>
+```
+
+Without `ignore_attributes`, LiveView's DOM patching would reset the `open`
+attribute on every re-render, closing the `<details>` element.
+
 ---
 
 ## When to Use What
@@ -315,22 +455,25 @@ Hooks.KeyHandler = {
 | Browser APIs (clipboard, geolocation) | JS Hook |
 | Third-party JS library | JS Hook |
 | Complex client state | JS Hook |
-| Debounce/throttle input | JS Hook |
+| Debounce/throttle input | JS Hook (or `phx-debounce` for simple cases) |
 | Canvas/WebGL | JS Hook |
 | Server-initiated client action | `push_event` + `handleEvent` |
+| Prevent attribute patching | `JS.ignore_attributes` + `phx-mounted` |
+| Component-local JS behavior | Colocated hook (LiveView 1.1+) |
 
 ---
 
 ## Debugging
 
 ```javascript
-// Enable LiveSocket debug logging
+// Enable LiveSocket debug logging — shows all events, diffs, and patches
+// in the browser console
 liveSocket.enableDebug()
 
-// Simulate latency (test loading states)
+// Simulate latency (test loading states) — adds delay to all roundtrips
 liveSocket.enableLatencySim(2000) // 2 second delay
 
-// In hooks
+// In hooks — log element state on mount
 mounted() {
   console.log("Hook mounted:", this.el.id, this.el.dataset)
 }

@@ -14,13 +14,17 @@ counters, live chat, typing indicators, cursor tracking, and more.
 
 ### Phoenix.PubSub
 
-PubSub is a topic-based message broker built into Phoenix. It works across nodes
-in a cluster (via pg/Phoenix.PubSub.PG2).
+PubSub is a topic-based, in-memory message distribution system built into Phoenix.
+It is NOT a persistent message broker (like RabbitMQ or Kafka) — messages are not
+queued or persisted. If no one is subscribed when a message is broadcast, it is lost.
+
+PubSub works across nodes in an Erlang cluster via Erlang's `:pg` module (distributed
+named process groups).
 
 ```
 ┌──────────┐   broadcast("room:1", msg)    ┌──────────┐
 │ LiveView  │ ─────────────────────────────► │ PubSub   │
-│ Process A │                                │ (pg)     │
+│ Process A │                                │ (:pg)    │
 └──────────┘                                 └──┬───┬───┘
                                                 │   │
                               ┌─────────────────┘   └──────────────────┐
@@ -35,6 +39,12 @@ in a cluster (via pg/Phoenix.PubSub.PG2).
 
 ```elixir
 # 1. Subscribe (in mount, only when connected)
+#
+# Why only when connected? LiveView mounts twice:
+#   - First mount: for the static HTML render (disconnected). This process
+#     may not persist, so subscribing here is wasteful.
+#   - Second mount: when the WebSocket connects. This is the long-lived
+#     process that should receive real-time messages.
 if connected?(socket) do
   Phoenix.PubSub.subscribe(MyApp.PubSub, "room:lobby")
 end
@@ -61,6 +71,10 @@ def mount(_, _, socket) do
   if connected?(socket) do
     Phoenix.PubSub.subscribe(MyApp.PubSub, @topic)
   end
+
+  # Note: New users joining will see count: 0 until the next increment.
+  # For production, you'd fetch the current count from a persistent store
+  # (e.g., ETS, database, or Agent) during mount to sync initial state.
   {:ok, assign(socket, count: 0)}
 end
 
@@ -75,7 +89,10 @@ end
 ```
 
 **Note:** The broadcaster also receives the message (it's subscribed too).
-This keeps state consistent without special-casing the sender.
+This keeps state consistent without special-casing the sender. The alternative
+is using `broadcast_from` + local update (see below), which feels more responsive
+but risks state divergence if the local update logic differs from the broadcast
+handler.
 
 ---
 
@@ -84,6 +101,9 @@ This keeps state consistent without special-casing the sender.
 ```elixir
 def handle_event("send_message", %{"body" => body}, socket) do
   msg = %{
+    # unique_integer is unique within this runtime instance, but NOT
+    # globally unique across a cluster. For distributed systems, use
+    # a UUID instead: Ecto.UUID.generate()
     id: System.unique_integer([:positive]),
     user_id: socket.assigns.user_id,
     body: body,
@@ -95,11 +115,14 @@ def handle_event("send_message", %{"body" => body}, socket) do
 end
 
 def handle_info({:new_message, msg}, socket) do
+  # stream_insert sends the item to the client and discards it from server
+  # memory. See Lesson 1 for how streams work.
   {:noreply, stream_insert(socket, :messages, msg)}
 end
 ```
 
-Using streams for chat messages = O(1) server memory per user.
+Using streams for chat messages = O(1) server memory for the message collection
+per user.
 
 ---
 
@@ -108,19 +131,29 @@ Using streams for chat messages = O(1) server memory per user.
 ### Simple Presence (Manual Tracking)
 
 ```elixir
+@topic "room:lobby"
+
 def mount(_, _, socket) do
-  user_id = generate_user_id()
+  user_id = Ecto.UUID.generate()
 
   if connected?(socket) do
     Phoenix.PubSub.subscribe(MyApp.PubSub, @topic)
-    broadcast(:user_joined, %{user_id: user_id})
+    Phoenix.PubSub.broadcast(MyApp.PubSub, @topic, {:user_joined, %{user_id: user_id}})
   end
 
   {:ok, assign(socket, user_id: user_id, online_users: [])}
 end
 
+def handle_info({:user_joined, %{user_id: uid}}, socket) do
+  {:noreply, assign(socket, online_users: [uid | socket.assigns.online_users])}
+end
+
+def handle_info({:user_left, %{user_id: uid}}, socket) do
+  {:noreply, assign(socket, online_users: List.delete(socket.assigns.online_users, uid))}
+end
+
 def terminate(_reason, socket) do
-  broadcast(:user_left, %{user_id: socket.assigns.user_id})
+  Phoenix.PubSub.broadcast(MyApp.PubSub, @topic, {:user_left, %{user_id: socket.assigns.user_id}})
 end
 ```
 
@@ -133,10 +166,12 @@ failure). For reliable presence, use Phoenix.Presence.
 # Define a Presence module
 defmodule MyAppWeb.Presence do
   use Phoenix.Presence,
-    otp_app: :my_app,
-    pubsub_server: MyApp.PubSub
+    otp_app: :my_app,          # Used for configuration lookup
+    pubsub_server: MyApp.PubSub  # Which PubSub to use for broadcasting diffs
 end
+```
 
+```elixir
 # In LiveView mount
 def mount(_, _, socket) do
   if connected?(socket) do
@@ -148,15 +183,17 @@ def mount(_, _, socket) do
     Phoenix.PubSub.subscribe(MyApp.PubSub, @topic)
   end
 
+  # Fetch initial presence list. During the disconnected (static) render,
+  # this returns the current state but real-time updates only start after
+  # the WebSocket connects.
   presences = MyAppWeb.Presence.list(@topic)
   {:ok, assign(socket, presences: presences)}
 end
 
-def handle_info(%Phoenix.Socket.Broadcast{event: "presence_diff", payload: diff}, socket) do
-  presences =
-    socket.assigns.presences
-    |> MyAppWeb.Presence.sync_diff(diff)
-
+# Presence broadcasts diffs as plain maps over PubSub.
+# The simplest approach: re-fetch the full presence list on each diff.
+def handle_info(%{event: "presence_diff"}, socket) do
+  presences = MyAppWeb.Presence.list(@topic)
   {:noreply, assign(socket, presences: presences)}
 end
 ```
@@ -164,8 +201,10 @@ end
 **Phoenix.Presence advantages:**
 - Handles crashes/disconnects automatically (heartbeat-based)
 - Works across cluster nodes
-- Provides `sync_diff` for efficient updates
-- CRDTs under the hood — no conflicts
+- Uses CRDTs (Conflict-free Replicated Data Types) under the hood — these are
+  data structures that can be merged across nodes without conflicts, even during
+  network partitions. This means presence data is eventually consistent without
+  requiring coordination.
 
 ---
 
@@ -202,17 +241,23 @@ Phoenix.PubSub.broadcast(MyApp.PubSub, topic, msg)
 Phoenix.PubSub.broadcast_from(MyApp.PubSub, self(), topic, msg)
 ```
 
-Use `broadcast_from` when the sender already applied the change locally:
+Use `broadcast_from` when the sender already applied the change locally
+(optimistic update). This feels snappier because the user sees their action
+immediately without waiting for the broadcast round-trip:
 
 ```elixir
 def handle_event("increment", _, socket) do
   # Apply locally first (optimistic update)
   socket = assign(socket, count: socket.assigns.count + 1)
-  # Then tell others
+  # Then tell others (skip self since we already updated)
   Phoenix.PubSub.broadcast_from(MyApp.PubSub, self(), @topic, :increment)
   {:noreply, socket}
 end
 ```
+
+**Tradeoff:** `broadcast` is simpler and guarantees consistency (everyone processes
+the same message through the same handler). `broadcast_from` risks the sender's
+state diverging if the local update logic differs from the broadcast handler.
 
 ---
 
@@ -220,10 +265,13 @@ end
 
 1. **Fan-out cost** — Broadcasting to 10,000 subscribers = 10,000 messages. Keep
    topic scopes narrow.
-2. **Message size** — PubSub copies the message to each subscriber. Keep payloads
-   small.
-3. **Frequency** — Don't broadcast on every keystroke. Debounce/throttle.
-4. **Node affinity** — PubSub works across Erlang nodes, but latency increases.
+2. **Message size** — PubSub copies the message to each subscriber's mailbox. Keep
+   payloads small.
+3. **Frequency** — Don't broadcast on every keystroke. Use `phx-debounce` on the
+   client side, or implement server-side throttling with `Process.send_after` to
+   batch rapid updates.
+4. **Cross-node latency** — PubSub works across Erlang nodes, but messages between
+   nodes on different machines have higher latency than local messages.
 
 ---
 

@@ -21,7 +21,7 @@ LiveView has two kinds of components: **function components** (stateless) and
 # Definition
 attr :name, :string, required: true
 attr :class, :string, default: ""
-slot :inner_block
+slot :inner_block  # Reserved slot name for default content passed between tags
 
 def greeting(assigns) do
   ~H"""
@@ -40,9 +40,10 @@ end
 
 **Characteristics:**
 - Just a function — no process, no state
-- Re-renders when parent re-renders (with changed assigns)
+- Re-renders when the parent re-renders AND the assigns passed to it have changed
+  (LiveView's change tracking optimizes away unchanged components)
 - Defined with `attr` and `slot` declarations
-- Called with `<.component_name>` syntax
+- Called with `<.component_name>` syntax (dot-prefix calls it as a local function)
 - **Use by default** — covers 90% of cases
 
 ### LiveComponents (Stateful)
@@ -73,16 +74,23 @@ defmodule MyApp.CounterComponent do
   end
 end
 
-# Usage
+# Usage — note: <.live_component> calls Phoenix.Component.live_component/1
 <.live_component module={MyApp.CounterComponent} id="my-counter" />
 ```
 
 **Characteristics:**
-- Has its own state, isolated from parent
+- Has its own assigns map, logically isolated from the parent. **Important:**
+  LiveComponents do NOT run in their own process — they share the parent LiveView's
+  process. Their state is logically separate but managed within the same process.
 - Has lifecycle callbacks (mount, update, render)
-- Events target `@myself` to stay within the component
-- **Must have a unique `id` prop**
-- Re-renders independently of parent (when its own assigns change)
+- Events target `@myself` to route to this component's `handle_event` (since
+  multiple components share one process, `@myself` is a
+  `%Phoenix.LiveComponent.CID{}` struct that uniquely identifies this instance)
+- **Must have a unique `id` prop** — LiveView uses the `id` to track component
+  instances across renders, route events to the right instance, and decide whether
+  to call `mount/1` (new id) or just `update/2` (existing id)
+- Can re-render independently via `send_update`, but also re-renders when the
+  parent re-renders with changed props
 
 ---
 
@@ -107,12 +115,15 @@ Called on every render (including first). Receives props from parent.
 
 ```elixir
 def update(assigns, socket) do
-  # assigns = props passed from parent
+  # assigns = props passed from parent (includes :id)
   # socket.assigns = current component state
 
   socket =
     socket
     |> assign(:title, assigns.title)
+    # assign_new only sets the value if the key does NOT already exist
+    # in the socket. The function is only called when the key is absent.
+    # This prevents parent re-renders from overwriting component-internal state.
     |> assign_new(:form, fn -> build_form(assigns) end)
 
   {:ok, socket}
@@ -149,7 +160,9 @@ def handle_event("reset", %{"id" => id}, socket) do
   {:noreply, socket}
 end
 
-# Child update/2
+# Child update/2 — pattern match to distinguish between regular props
+# and imperative commands. Note: send_update always includes :id in
+# the assigns map, even if your pattern match doesn't bind it.
 def update(%{reset: true}, socket) do
   {:ok, assign(socket, count: 0)}
 end
@@ -159,15 +172,13 @@ def update(assigns, socket) do
 end
 ```
 
-**Pattern match in `update/2`** to distinguish between regular props and
-imperative commands.
-
 ### Child → Parent: send/2
 
 ```elixir
 # Child (in handle_event)
 def handle_event("save", params, socket) do
-  # self() in a LiveComponent refers to the PARENT LiveView process
+  # self() in a LiveComponent returns the PARENT LiveView's PID,
+  # because LiveComponents run inside the parent's process.
   send(self(), {:card_saved, socket.assigns.id, params})
   {:noreply, socket}
 end
@@ -197,6 +208,7 @@ The parent's `handle_event("delete", ...)` will be called.
 ### Basic Slots
 
 ```elixir
+# inner_block is the reserved name for default slot content
 slot :inner_block, required: true
 
 def card(assigns) do
@@ -271,9 +283,12 @@ end
 
 Use a **LiveComponent** when you need:
 1. **Isolated state** — component tracks its own state (e.g., open/closed, form data)
-2. **Independent re-renders** — component should update without re-rendering parent
-3. **Component-scoped events** — events handled within the component
-4. **Form isolation** — component manages its own form/changeset
+   that shouldn't be in the parent's assigns
+2. **Component-scoped events** — events handled within the component via `@myself`
+3. **Form isolation** — component manages its own form/changeset independently
+4. **Targeted re-renders** — update just this component via `send_update` without
+   re-rendering the entire parent (matters for performance when the parent template
+   is expensive to diff)
 
 Use a **function component** for everything else:
 - Display-only UI (cards, badges, layouts)
@@ -295,7 +310,8 @@ defmodule Badge do
   def render(assigns), do: ~H"<span class='badge'>{@text}</span>"
 end
 
-# GOOD
+# GOOD: Function component — define in any module that `use Phoenix.Component`
+# (your CoreComponents module, or the Layouts module, etc.)
 def badge(assigns), do: ~H"<span class='badge'>{@text}</span>"
 ```
 
@@ -312,8 +328,8 @@ def badge(assigns), do: ~H"<span class='badge'>{@text}</span>"
 ```
 
 ### 3. Deep component nesting
-LiveComponents add overhead (extra process messages). Don't nest them 5 levels deep.
-Flatten when possible.
+LiveComponents add overhead from the additional lifecycle callbacks (mount/update)
+and internal state tracking. Don't nest them 5 levels deep. Flatten when possible.
 
 ---
 
