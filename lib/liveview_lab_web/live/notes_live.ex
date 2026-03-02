@@ -52,7 +52,7 @@ defmodule LiveviewLabWeb.NotesLive do
         <.link navigate="/" class="btn btn-ghost btn-sm">Home</.link>
       </div>
 
-      <article class="prose prose-sm max-w-none prose-headings:text-base-content prose-p:text-base-content prose-li:text-base-content prose-strong:text-base-content prose-code:text-primary prose-td:text-base-content prose-th:text-base-content">
+      <article class="notes-content">
         {raw(@html_content)}
       </article>
     </div>
