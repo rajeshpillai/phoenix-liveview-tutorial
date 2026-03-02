@@ -67,22 +67,36 @@ defmodule LiveviewLabWeb.NotesLive do
   end
 
   defp highlight_code_blocks(html) do
+    # Earmark outputs: <pre><code class="elixir language-elixir">...</code></pre>
     Regex.replace(
-      ~r/<pre><code class="language-(\w+)">([\s\S]*?)<\/code><\/pre>/,
+      ~r/<pre><code class="(\w+)[^"]*">([\s\S]*?)<\/code><\/pre>/,
       html,
       fn _full, lang, code ->
         highlighted = highlight(lang, unescape_html(code))
-        ~s(<pre class="highlight bg-base-300 p-4 rounded-lg overflow-x-auto text-sm"><code class="language-#{lang}">#{highlighted}</code></pre>)
+        ~s(<pre class="highlight bg-base-300 p-4 rounded-lg overflow-x-auto text-sm"><code>#{highlighted}</code></pre>)
       end
     )
   end
 
-  defp highlight("elixir", code), do: Makeup.highlight(code, lexer: Makeup.Lexers.ElixirLexer)
-  defp highlight("heex", code), do: Makeup.highlight(code, lexer: Makeup.Lexers.ElixirLexer)
-  defp highlight("javascript", code), do: Makeup.highlight(code, lexer: Makeup.Lexers.JsLexer)
-  defp highlight("js", code), do: Makeup.highlight(code, lexer: Makeup.Lexers.JsLexer)
-  defp highlight("html", code), do: Makeup.highlight(code, lexer: Makeup.Lexers.HTMLLexer)
+  defp highlight(lang, code) when lang in ~w(elixir heex) do
+    Makeup.highlight(code, lexer: Makeup.Lexers.ElixirLexer) |> strip_makeup_wrapper()
+  end
+
+  defp highlight(lang, code) when lang in ~w(javascript js) do
+    Makeup.highlight(code, lexer: Makeup.Lexers.JsLexer) |> strip_makeup_wrapper()
+  end
+
+  defp highlight("html", code) do
+    Makeup.highlight(code, lexer: Makeup.Lexers.HTMLLexer) |> strip_makeup_wrapper()
+  end
+
   defp highlight(_lang, code), do: code
+
+  defp strip_makeup_wrapper(html) do
+    html
+    |> String.replace(~r/^<pre class="highlight"><code>/, "")
+    |> String.replace(~r/<\/code><\/pre>$/, "")
+  end
 
   defp unescape_html(html) do
     html
