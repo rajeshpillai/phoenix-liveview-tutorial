@@ -9,12 +9,19 @@ defmodule LiveviewLabWeb.NotesLive do
   @notes_dir Path.expand("notes", File.cwd!())
 
   @lessons %{
-    "streams" => "01-streams-and-async.md",
-    "streaming" => "02-real-time-streaming.md",
-    "temporary-assigns" => "03-temporary-assigns-and-pagination.md",
-    "components" => "04-livecomponents-deep-dive.md",
-    "pubsub" => "05-pubsub-and-presence.md",
-    "js-hooks" => "06-js-hooks-and-commands.md"
+    "architecture" => "01-liveview-architecture.md",
+    "lifecycle" => "02-lifecycle-callbacks.md",
+    "assigns-reactivity" => "03-assigns-and-reactivity.md",
+    "events" => "04-events-and-bindings.md",
+    "navigation" => "05-navigation-and-routing.md",
+    "function-components" => "06-function-components.md",
+    "error-handling" => "07-error-handling-flash-uploads.md",
+    "streams" => "08-streams-and-async.md",
+    "streaming" => "09-real-time-streaming.md",
+    "temporary-assigns" => "10-temporary-assigns-and-pagination.md",
+    "components" => "11-livecomponents-deep-dive.md",
+    "pubsub" => "12-pubsub-and-presence.md",
+    "js-hooks" => "13-js-hooks-and-commands.md"
   }
 
   def mount(%{"lesson" => lesson_slug}, _session, socket) do

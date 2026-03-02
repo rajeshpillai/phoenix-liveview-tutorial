@@ -1,4 +1,4 @@
-# Lesson 2: Real-time Streaming
+# Lesson 9: Real-time Streaming
 
 ## Overview
 
@@ -6,7 +6,7 @@ This lesson covers patterns for streaming data to the client in real-time — to
 by token, chunk by chunk, or as a continuous log. These patterns power LLM chat
 interfaces, progress indicators, and live tailing UIs.
 
-**Source file:** `lib/liveview_lab_web/live/lesson2_streaming_live.ex`
+**Source file:** `lib/liveview_lab_web/live/lesson9_streaming_live.ex`
 
 ---
 

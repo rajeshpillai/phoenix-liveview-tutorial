@@ -18,12 +18,24 @@ defmodule LiveviewLabWeb.Router do
     pipe_through :browser
 
     live "/", HomeLive
-    live "/lessons/streams", Lesson1StreamsLive
-    live "/lessons/streaming", Lesson2StreamingLive
-    live "/lessons/temporary-assigns", Lesson3TempAssignsLive
-    live "/lessons/components", Lesson4ComponentsLive
-    live "/lessons/pubsub", Lesson5PubsubLive
-    live "/lessons/js-hooks", Lesson6JsHooksLive
+
+    # Foundational lessons (1-7)
+    live "/lessons/architecture", Lesson1ArchitectureLive
+    live "/lessons/lifecycle", Lesson2LifecycleLive
+    live "/lessons/assigns-reactivity", Lesson3AssignsReactivityLive
+    live "/lessons/events", Lesson4EventsLive
+    live "/lessons/navigation", Lesson5NavigationLive
+    live "/lessons/function-components", Lesson6FunctionComponentsLive
+    live "/lessons/error-handling", Lesson7ErrorHandlingLive
+
+    # Advanced lessons (8-13)
+    live "/lessons/streams", Lesson8StreamsLive
+    live "/lessons/streaming", Lesson9StreamingLive
+    live "/lessons/temporary-assigns", Lesson10TempAssignsLive
+    live "/lessons/components", Lesson11ComponentsLive
+    live "/lessons/pubsub", Lesson12PubsubLive
+    live "/lessons/js-hooks", Lesson13JsHooksLive
+
     live "/notes/:lesson", NotesLive
   end
 

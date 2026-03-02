@@ -1,6 +1,6 @@
-defmodule LiveviewLabWeb.Lesson4ComponentsLive do
+defmodule LiveviewLabWeb.Lesson11ComponentsLive do
   @moduledoc """
-  Lesson 4: LiveComponents Deep Dive
+  Lesson 11: LiveComponents Deep Dive
 
   Key concepts:
   - Stateful LiveComponents vs stateless function components
@@ -23,7 +23,7 @@ defmodule LiveviewLabWeb.Lesson4ComponentsLive do
     socket =
       socket
       |> assign(
-        page_title: "Lesson 4: LiveComponents",
+        page_title: "Lesson 11: LiveComponents",
         cards: cards,
         last_event: nil
       )

@@ -1,4 +1,4 @@
-# Lesson 1: Streams & Async
+# Lesson 8: Streams & Async
 
 ## Overview
 
@@ -11,7 +11,7 @@ If you store a list of 10,000 items in a regular assign, each connected user hol
 their own copy. With 500 users, that's 500 copies. Streams solve this by sending items
 to the client and then discarding them from server memory.
 
-**Source file:** `lib/liveview_lab_web/live/lesson1_streams_live.ex`
+**Source file:** `lib/liveview_lab_web/live/lesson8_streams_live.ex`
 
 ---
 

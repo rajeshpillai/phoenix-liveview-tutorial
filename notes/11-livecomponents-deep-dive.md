@@ -1,4 +1,4 @@
-# Lesson 4: LiveComponents Deep Dive
+# Lesson 11: LiveComponents Deep Dive
 
 ## Overview
 
@@ -7,7 +7,7 @@ LiveView has two kinds of components: **function components** (stateless) and
 — is essential for building maintainable LiveView applications.
 
 **Source files:**
-- `lib/liveview_lab_web/live/lesson4_components_live.ex`
+- `lib/liveview_lab_web/live/lesson11_components_live.ex`
 - `lib/liveview_lab_web/components/counter_component.ex`
 - `lib/liveview_lab_web/components/editable_card_component.ex`
 

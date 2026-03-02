@@ -1,6 +1,6 @@
-defmodule LiveviewLabWeb.Lesson3TempAssignsLive do
+defmodule LiveviewLabWeb.Lesson10TempAssignsLive do
   @moduledoc """
-  Lesson 3: Temporary Assigns & Pagination
+  Lesson 10: Temporary Assigns & Pagination
 
   Key concepts:
   - Why `temporary_assigns` existed (legacy pattern)
@@ -16,7 +16,7 @@ defmodule LiveviewLabWeb.Lesson3TempAssignsLive do
     socket =
       socket
       |> assign(
-        page_title: "Lesson 3: Temporary Assigns & Pagination",
+        page_title: "Lesson 10: Temporary Assigns & Pagination",
         page: 1,
         end_of_data: false,
         loading: false,

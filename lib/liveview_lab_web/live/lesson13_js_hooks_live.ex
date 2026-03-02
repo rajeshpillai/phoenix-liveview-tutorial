@@ -1,6 +1,6 @@
-defmodule LiveviewLabWeb.Lesson6JsHooksLive do
+defmodule LiveviewLabWeb.Lesson13JsHooksLive do
   @moduledoc """
-  Lesson 6: JS Hooks & Commands
+  Lesson 13: JS Hooks & Commands
 
   Key concepts:
   - JS Hooks for client-side behavior (phx-hook)
@@ -15,7 +15,7 @@ defmodule LiveviewLabWeb.Lesson6JsHooksLive do
     socket =
       socket
       |> assign(
-        page_title: "Lesson 6: JS Hooks & Commands",
+        page_title: "Lesson 13: JS Hooks & Commands",
         clipboard_text: "Hello from LiveView! Copy me.",
         server_events: [],
         js_toggle_open: false

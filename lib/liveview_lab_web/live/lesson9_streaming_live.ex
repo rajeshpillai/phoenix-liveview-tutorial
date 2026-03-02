@@ -1,6 +1,6 @@
-defmodule LiveviewLabWeb.Lesson2StreamingLive do
+defmodule LiveviewLabWeb.Lesson9StreamingLive do
   @moduledoc """
-  Lesson 2: Real-time Streaming
+  Lesson 9: Real-time Streaming
 
   Key concepts:
   - Token-by-token / chunk-by-chunk streaming to the UI
@@ -14,7 +14,7 @@ defmodule LiveviewLabWeb.Lesson2StreamingLive do
     socket =
       socket
       |> assign(
-        page_title: "Lesson 2: Real-time Streaming",
+        page_title: "Lesson 9: Real-time Streaming",
         streaming: false,
         stream_text: "",
         progress: 0,

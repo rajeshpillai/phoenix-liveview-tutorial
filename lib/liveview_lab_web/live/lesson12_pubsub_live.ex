@@ -1,6 +1,6 @@
-defmodule LiveviewLabWeb.Lesson5PubsubLive do
+defmodule LiveviewLabWeb.Lesson12PubsubLive do
   @moduledoc """
-  Lesson 5: PubSub & Presence
+  Lesson 12: PubSub & Presence
 
   Key concepts:
   - Phoenix.PubSub for cross-process communication
@@ -23,7 +23,7 @@ defmodule LiveviewLabWeb.Lesson5PubsubLive do
     socket =
       socket
       |> assign(
-        page_title: "Lesson 5: PubSub & Presence",
+        page_title: "Lesson 12: PubSub & Presence",
         user_id: user_id,
         shared_count: 0,
         messages: [],

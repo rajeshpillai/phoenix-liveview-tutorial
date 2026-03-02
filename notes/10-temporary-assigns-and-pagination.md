@@ -1,4 +1,4 @@
-# Lesson 3: Temporary Assigns & Pagination
+# Lesson 10: Temporary Assigns & Pagination
 
 ## Overview
 
@@ -6,7 +6,7 @@ This lesson covers memory management strategies in LiveView, with focus on how
 streams replaced the older `temporary_assigns` pattern, and how to implement
 efficient pagination.
 
-**Source file:** `lib/liveview_lab_web/live/lesson3_temp_assigns_live.ex`
+**Source file:** `lib/liveview_lab_web/live/lesson10_temp_assigns_live.ex`
 
 ---
 

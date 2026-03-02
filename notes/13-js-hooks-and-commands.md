@@ -1,4 +1,4 @@
-# Lesson 6: JS Hooks & Commands
+# Lesson 13: JS Hooks & Commands
 
 ## Overview
 
@@ -12,7 +12,7 @@ JavaScript that cannot be expressed as declarative HTML attributes. Hooks provid
 that escape hatch.
 
 **Source files:**
-- `lib/liveview_lab_web/live/lesson6_js_hooks_live.ex`
+- `lib/liveview_lab_web/live/lesson13_js_hooks_live.ex`
 - `assets/js/app.js` (hooks section)
 
 ---

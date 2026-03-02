@@ -2,6 +2,50 @@ defmodule LiveviewLabWeb.HomeLive do
   use LiveviewLabWeb, :live_view
 
   @lessons [
+    # Foundational (1-7)
+    %{
+      path: "/lessons/architecture",
+      title: "LiveView Architecture",
+      desc: "How LiveView works: BEAM processes, two-phase mount, WebSocket, server-rendered diffs",
+      tag: "Architecture"
+    },
+    %{
+      path: "/lessons/lifecycle",
+      title: "Lifecycle Callbacks",
+      desc: "mount, handle_params, handle_event, handle_info, render, terminate — when and why",
+      tag: "Lifecycle"
+    },
+    %{
+      path: "/lessons/assigns-reactivity",
+      title: "Assigns & Reactivity",
+      desc: "State management with assigns, change tracking, forms, validation with to_form",
+      tag: "State"
+    },
+    %{
+      path: "/lessons/events",
+      title: "Events & Bindings",
+      desc: "phx-click, phx-change, phx-submit, debounce, throttle, keyboard events, payloads",
+      tag: "Events"
+    },
+    %{
+      path: "/lessons/navigation",
+      title: "Navigation & Routing",
+      desc: "Patch vs navigate, handle_params, URL-driven state, live_session, query params",
+      tag: "Navigation"
+    },
+    %{
+      path: "/lessons/function-components",
+      title: "Function Components",
+      desc: "Attributes, slots, slot arguments, global attrs, CoreComponents patterns",
+      tag: "Components"
+    },
+    %{
+      path: "/lessons/error-handling",
+      title: "Error Handling, Flash & Uploads",
+      desc: "Flash messages, error patterns, file uploads with live_file_input, previews",
+      tag: "Practical"
+    },
+    # Advanced (8-13)
     %{
       path: "/lessons/streams",
       title: "Streams & Async",
@@ -50,8 +94,8 @@ defmodule LiveviewLabWeb.HomeLive do
       <div class="text-center space-y-4">
         <h1 class="text-4xl font-bold">LiveView Lab</h1>
         <p class="text-lg opacity-70 max-w-xl mx-auto">
-          Advanced Phoenix LiveView patterns — streams, real-time streaming,
-          performance optimization, components, PubSub, and JS interop.
+          Phoenix LiveView from foundations to advanced patterns — architecture,
+          lifecycle, state, components, real-time, and JavaScript interop.
         </p>
       </div>
 

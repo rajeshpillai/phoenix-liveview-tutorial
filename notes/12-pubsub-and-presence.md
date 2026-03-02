@@ -1,4 +1,4 @@
-# Lesson 5: PubSub & Presence
+# Lesson 12: PubSub & Presence
 
 ## Overview
 
@@ -6,7 +6,7 @@ Phoenix.PubSub enables real-time communication between LiveView processes.
 Combined with Phoenix.Presence, you can build collaborative features: shared
 counters, live chat, typing indicators, cursor tracking, and more.
 
-**Source file:** `lib/liveview_lab_web/live/lesson5_pubsub_live.ex`
+**Source file:** `lib/liveview_lab_web/live/lesson12_pubsub_live.ex`
 
 ---
 

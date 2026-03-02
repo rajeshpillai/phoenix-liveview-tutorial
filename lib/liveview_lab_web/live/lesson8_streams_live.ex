@@ -1,6 +1,6 @@
-defmodule LiveviewLabWeb.Lesson1StreamsLive do
+defmodule LiveviewLabWeb.Lesson8StreamsLive do
   @moduledoc """
-  Lesson 1: Streams & Async
+  Lesson 8: Streams & Async
 
   Key concepts:
   - `stream/3` for efficient large-list rendering (no server-side storage of list items)
@@ -13,7 +13,7 @@ defmodule LiveviewLabWeb.Lesson1StreamsLive do
   def mount(_params, _session, socket) do
     socket =
       socket
-      |> assign(page_title: "Lesson 1: Streams & Async")
+      |> assign(page_title: "Lesson 8: Streams & Async")
       |> stream(:messages, [])
       |> assign(form: to_form(%{"body" => ""}))
       |> assign(counter: 0)
