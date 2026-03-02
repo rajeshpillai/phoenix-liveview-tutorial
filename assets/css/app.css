@@ -103,3 +103,61 @@
 [data-phx-session], [data-phx-teleported-src] { display: contents }
 
 /* This file is for your main application CSS */
+
+/* Makeup syntax highlighting tokens */
+pre.highlight code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+/* Strings */
+.highlight .s, .highlight .s1, .highlight .s2, .highlight .sa, .highlight .sb,
+.highlight .sc, .highlight .dl, .highlight .sd, .highlight .sh, .highlight .sx {
+  color: #98c379;
+}
+
+/* Keywords, operators */
+.highlight .k, .highlight .kd, .highlight .kn, .highlight .kp, .highlight .kr,
+.highlight .kc, .highlight .kt, .highlight .ow {
+  color: #c678dd;
+  font-weight: bold;
+}
+
+/* Names / functions */
+.highlight .n, .highlight .nf, .highlight .na, .highlight .nb, .highlight .nc,
+.highlight .no, .highlight .nd, .highlight .ni, .highlight .ne, .highlight .nl {
+  color: #61afef;
+}
+
+/* Numbers */
+.highlight .m, .highlight .mi, .highlight .mf, .highlight .mh, .highlight .mo {
+  color: #d19a66;
+}
+
+/* Comments */
+.highlight .c, .highlight .c1, .highlight .cm, .highlight .cs, .highlight .cp,
+.highlight .ch, .highlight .cpf {
+  color: #7f848e;
+  font-style: italic;
+}
+
+/* Atoms / symbols */
+.highlight .ss {
+  color: #56b6c2;
+}
+
+/* Operators and punctuation */
+.highlight .o, .highlight .p {
+  color: #abb2bf;
+}
+
+/* Module attributes */
+.highlight .na {
+  color: #e5c07b;
+}
+
+/* Error tokens */
+.highlight .err {
+  color: #e06c75;
+}

@@ -65,7 +65,12 @@ defmodule LiveviewLab.MixProject do
       {:gettext, "~> 1.0"},
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.2.0"},
-      {:bandit, "~> 1.5"}
+      {:bandit, "~> 1.5"},
+      {:earmark, "~> 1.4"},
+      {:makeup, "~> 1.1"},
+      {:makeup_elixir, "~> 1.0"},
+      {:makeup_js, "~> 0.1"},
+      {:makeup_html, "~> 0.1"}
     ]
   end
 
