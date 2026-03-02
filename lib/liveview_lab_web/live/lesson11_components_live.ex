@@ -144,7 +144,7 @@ defmodule LiveviewLabWeb.Lesson11ComponentsLive do
         <div class="card-body text-sm space-y-2">
           <h3 class="font-bold">Key Takeaways</h3>
           <ul class="list-disc list-inside space-y-1 opacity-80">
-            <li><strong>LiveComponent</strong> = stateful, own process, <code>@myself</code> for events</li>
+            <li><strong>LiveComponent</strong> = stateful, runs in parent's process, <code>@myself</code> for targeted events</li>
             <li><strong>Function component</strong> = stateless, just a render function, use slots</li>
             <li><code>send_update/2</code> — parent sends data to a child component by ID</li>
             <li>Lifecycle: <code>mount/1 → update/2 → render/1</code> (mount only on first render)</li>

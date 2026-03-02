@@ -50,7 +50,8 @@ defmodule LiveviewLabWeb.Lesson5NavigationLive do
         filtered_languages: @languages,
         current_sort: "name",
         current_page: 1,
-        total_pages: total_pages()
+        total_pages: total_pages(),
+        page_size: @page_size
       )
 
     {:ok, socket}

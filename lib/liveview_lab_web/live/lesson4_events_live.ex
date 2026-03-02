@@ -64,15 +64,17 @@ defmodule LiveviewLabWeb.Lesson4EventsLive do
               </div>
 
               <h3 class="font-semibold text-sm">Input Events</h3>
-              <input
-                type="text"
-                placeholder="Type here (phx-change, phx-blur, phx-focus)"
-                phx-change="log_change"
-                phx-blur="log_blur"
-                phx-focus="log_focus"
-                name="demo_input"
-                class="input input-bordered input-sm w-full"
-              />
+              <form phx-change="log_change">
+                <input
+                  type="text"
+                  placeholder="Type here (phx-change, phx-blur, phx-focus)"
+                  phx-blur="log_blur"
+                  phx-focus="log_focus"
+                  phx-debounce="200"
+                  name="demo_input"
+                  class="input input-bordered input-sm w-full"
+                />
+              </form>
 
               <h3 class="font-semibold text-sm">Form Submit</h3>
               <form phx-submit="log_submit" class="flex gap-2">
@@ -138,14 +140,15 @@ defmodule LiveviewLabWeb.Lesson4EventsLive do
               <p class="text-xs opacity-60">
                 Waits 500ms after you <em>stop</em> typing before sending the event.
               </p>
-              <input
-                type="text"
-                name="debounce_input"
-                placeholder="Type rapidly here..."
-                phx-change="debounce_changed"
-                phx-debounce="500"
-                class="input input-bordered input-sm w-full"
-              />
+              <form phx-change="debounce_changed">
+                <input
+                  type="text"
+                  name="debounce_input"
+                  placeholder="Type rapidly here..."
+                  phx-debounce="500"
+                  class="input input-bordered input-sm w-full"
+                />
+              </form>
               <div class="text-sm space-y-1">
                 <div>
                   Events reached server:
@@ -166,14 +169,15 @@ defmodule LiveviewLabWeb.Lesson4EventsLive do
               <p class="text-xs opacity-60">
                 Sends at most once every 500ms, even if you keep typing.
               </p>
-              <input
-                type="text"
-                name="throttle_input"
-                placeholder="Type rapidly here..."
-                phx-change="throttle_changed"
-                phx-throttle="500"
-                class="input input-bordered input-sm w-full"
-              />
+              <form phx-change="throttle_changed">
+                <input
+                  type="text"
+                  name="throttle_input"
+                  placeholder="Type rapidly here..."
+                  phx-throttle="500"
+                  class="input input-bordered input-sm w-full"
+                />
+              </form>
               <div class="text-sm space-y-1">
                 <div>
                   Events reached server:
