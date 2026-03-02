@@ -177,7 +177,7 @@ defmodule LiveviewLabWeb.Lesson1StreamsLive do
   end
 
   def handle_event("reload_async", _params, socket) do
-    {:noreply, assign_async(socket, :slow_data, fn -> fetch_slow_data() end)}
+    {:noreply, assign_async(socket, :slow_data, fn -> fetch_slow_data() end, reset: true)}
   end
 
   # -- Private --
