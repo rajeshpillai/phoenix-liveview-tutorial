@@ -58,7 +58,7 @@ defmodule LiveviewLabWeb.Lesson3AssignsReactivityLive do
             LiveView's <strong>change tracking</strong>.
           </p>
 
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
+          <form phx-change="update_reactive" class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
             <div class="form-control">
               <label class="label">
                 <span class="label-text text-xs">Name</span>
@@ -66,7 +66,6 @@ defmodule LiveviewLabWeb.Lesson3AssignsReactivityLive do
               <input
                 type="text"
                 value={@name}
-                phx-change="update_name"
                 phx-debounce="200"
                 name="name"
                 class="input input-bordered input-sm"
@@ -81,7 +80,6 @@ defmodule LiveviewLabWeb.Lesson3AssignsReactivityLive do
               <input
                 type="color"
                 value={@color}
-                phx-change="update_color"
                 name="color"
                 class="input input-bordered input-sm h-9 p-1 cursor-pointer"
               />
@@ -96,12 +94,11 @@ defmodule LiveviewLabWeb.Lesson3AssignsReactivityLive do
                 min="1"
                 max="20"
                 value={@count}
-                phx-change="update_count"
                 name="count"
                 class="range range-sm range-primary mt-2"
               />
             </div>
-          </div>
+          </form>
 
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
             <.reactive_card
@@ -244,32 +241,17 @@ defmodule LiveviewLabWeb.Lesson3AssignsReactivityLive do
   # -- Events --
 
   @impl true
-  def handle_event("update_name", %{"name" => name}, socket) do
-    socket =
-      socket
-      |> assign(name: name, name_rendered_at: now_str())
-
-    {:noreply, socket}
+  def handle_event("update_reactive", %{"_target" => ["name"], "name" => name}, socket) do
+    {:noreply, assign(socket, name: name, name_rendered_at: now_str())}
   end
 
-  @impl true
-  def handle_event("update_color", %{"color" => color}, socket) do
-    socket =
-      socket
-      |> assign(color: color, color_rendered_at: now_str())
-
-    {:noreply, socket}
+  def handle_event("update_reactive", %{"_target" => ["color"], "color" => color}, socket) do
+    {:noreply, assign(socket, color: color, color_rendered_at: now_str())}
   end
 
-  @impl true
-  def handle_event("update_count", %{"count" => count}, socket) do
+  def handle_event("update_reactive", %{"_target" => ["count"], "count" => count}, socket) do
     count = String.to_integer(count)
-
-    socket =
-      socket
-      |> assign(count: count, count_rendered_at: now_str())
-
-    {:noreply, socket}
+    {:noreply, assign(socket, count: count, count_rendered_at: now_str())}
   end
 
   @impl true
