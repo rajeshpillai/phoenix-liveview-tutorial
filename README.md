@@ -35,6 +35,10 @@ An interactive Phoenix LiveView tutorial — 13 hands-on lessons covering archit
 
 Each lesson includes interactive demos and a companion notes page accessible from the lesson header.
 
+## License
+
+This project is licensed under the [GNU Affero General Public License v3.0 (AGPL-3.0)](LICENSE).
+
 ## Learn more
 
 * Official website: https://www.phoenixframework.org/
