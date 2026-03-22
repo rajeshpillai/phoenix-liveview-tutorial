@@ -126,6 +126,7 @@ def update(assigns, socket) do
 
   socket =
     socket
+    |> assign(:id, assigns.id)
     |> assign(:title, assigns.title)
     # assign_new only sets the value if the key does NOT already exist
     # in the socket. The function is only called when the key is absent.
@@ -138,6 +139,12 @@ end
 
 **Important:** `update/2` receives ALL assigns from the parent each time.
 Use `assign_new/3` to avoid overwriting component-internal state.
+
+**Gotcha:** When you write a custom `update/2` that cherry-picks assigns
+(instead of `assign(socket, assigns)`), you must explicitly include `:id`
+if you access `socket.assigns.id` elsewhere (e.g., in child→parent messages).
+LiveView passes `:id` in the assigns map, but it won't be in the socket
+unless you assign it yourself.
 
 ### render/1
 Standard render function. Use `@myself` for event targeting.

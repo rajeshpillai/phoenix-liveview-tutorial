@@ -15,7 +15,7 @@ defmodule LiveviewLabWeb.Components.EditableCardComponent do
   def update(assigns, socket) do
     socket =
       socket
-      |> assign(title: assigns.title, content: assigns.content)
+      |> assign(id: assigns.id, title: assigns.title, content: assigns.content)
       |> assign_new(:form, fn -> to_form(%{"title" => assigns.title, "content" => assigns.content}) end)
 
     {:ok, socket}
